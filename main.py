@@ -31,4 +31,4 @@ if __name__ == '__main__':
                        "-subj", "/CN=localhost"], check=True)
     
     print("--- 🛰️ HUB ONLINE [HTTPS:443] ---")
-    run_simple('127.0.0.1', 443, app, ssl_context=(cert, key))
+    run_simple('0.0.0.0', 443, app, ssl_context=(cert, key))
