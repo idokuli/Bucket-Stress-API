@@ -103,6 +103,32 @@ def delete_file(filename):
         flash(f"Delete Error: {str(e)}")
     return redirect(url_for('s3.s3_index'))
 
+@s3_bp.route('/search/<path:filename>')
+def search_in_file(filename):
+    word = request.args.get('word', '')
+    case_sensitive = request.args.get('case_sensitive', 'false').lower() == 'true'
+    
+    if not word:
+        flash("Please provide a search word")
+        return redirect(url_for('s3.s3_index'))
+    
+    try:
+        results = get_worker().find_word_in_file(
+            session['bucket'], 
+            filename, 
+            word, 
+            case_sensitive
+        )
+        
+        if 'error' in results:
+            flash(f"Search Error: {results['error']}")
+            return redirect(url_for('s3.s3_index'))
+        
+        return render_template('s3_search.html', results=results)
+    except Exception as e:
+        flash(f"Search Error: {str(e)}")
+        return redirect(url_for('s3.s3_index'))
+
 @s3_bp.route('/logout')
 def s3_logout():
     for key in ['access', 'secret', 'region', 'bucket']:

@@ -61,3 +61,45 @@ class S3Service:
                 }]
             }
         )
+
+    def find_word_in_file(self, bucket_name, filename, word, case_sensitive=False):
+        """
+        Search for a word in a file stored in the bucket.
+        Returns a list of matches with line numbers and content.
+        """
+        import io
+        
+        # Download file content
+        response = self.s3.get_object(Bucket=bucket_name, Key=filename)
+        content = response['Body'].read()
+        
+        # Try to decode as text
+        try:
+            text = content.decode('utf-8')
+        except UnicodeDecodeError:
+            try:
+                text = content.decode('latin-1')
+            except Exception:
+                return {'error': 'File is not a text file or has unsupported encoding'}
+        
+        # Search for the word
+        lines = text.splitlines()
+        matches = []
+        search_word = word if case_sensitive else word.lower()
+        
+        for line_num, line in enumerate(lines, 1):
+            search_line = line if case_sensitive else line.lower()
+            if search_word in search_line:
+                matches.append({
+                    'line_number': line_num,
+                    'content': line.strip(),
+                    'occurrences': search_line.count(search_word)
+                })
+        
+        return {
+            'filename': filename,
+            'word': word,
+            'total_matches': len(matches),
+            'total_occurrences': sum(m['occurrences'] for m in matches),
+            'matches': matches
+        }

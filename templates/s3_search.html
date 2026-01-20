@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<body class="min-h-screen p-6">
+    <div class="glass w-full max-w-2xl mx-auto rounded-[2rem] p-8 shadow-2xl border-blue-500/20 border">
+        <a href="{{ url_for('s3.s3_index') }}" class="text-cyan-400 hover:text-cyan-300 text-sm transition-all">
+            &larr; Back to Explorer
+        </a>
+
+        <div class="flex items-center gap-3 mt-4 mb-6">
+            <div class="p-3 rounded-xl bg-purple-500/10 text-purple-400">
+                <i data-lucide="search"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-slate-100">Search Results</h3>
+                <p class="text-slate-400 text-sm">{{ results.filename }}</p>
+            </div>
+        </div>
+
+        <div class="mb-6 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+            <div class="flex flex-wrap gap-4 text-sm">
+                <div>
+                    <span class="text-slate-400">Search term:</span>
+                    <span class="text-cyan-400 font-mono ml-1">"{{ results.word }}"</span>
+                </div>
+                <div>
+                    <span class="text-slate-400">Lines matched:</span>
+                    <span class="text-emerald-400 font-bold ml-1">{{ results.total_matches }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400">Total occurrences:</span>
+                    <span class="text-amber-400 font-bold ml-1">{{ results.total_occurrences }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            {% for match in results.matches %}
+            <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-blue-500/20 text-blue-400 border border-blue-500/40">
+                        Line {{ match.line_number }}
+                    </span>
+                    <span class="text-xs text-slate-500">{{ match.occurrences }} occurrence(s)</span>
+                </div>
+                <code class="text-slate-300 text-sm block overflow-x-auto whitespace-pre-wrap break-all">{{ match.content }}</code>
+            </div>
+            {% else %}
+            <div class="text-center py-10 text-slate-500">
+                <i data-lucide="search-x" class="w-12 h-12 mx-auto mb-3 opacity-50"></i>
+                <p>No matches found for "{{ results.word }}"</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+{% endblock %}
