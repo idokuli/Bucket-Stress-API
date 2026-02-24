@@ -38,8 +38,11 @@ class S3Service:
         } for v in versions.get('Versions', []) if v['Key'] == filename]
 
     def get_url(self, bucket_name, filename):
+        import urllib.parse
         clean_name = filename.split("/")[-1]
-        disposition = f'attachment; filename="{clean_name}"'
+        # Use RFC 5987 to handle non-ASCII filenames
+        quoted_name = urllib.parse.quote(clean_name)
+        disposition = f"attachment; filename=\"{clean_name}\"; filename*=UTF-8''{quoted_name}"
         return self.s3.generate_presigned_url(
             'get_object', 
             Params={'Bucket': bucket_name, 'Key': filename, 'ResponseContentDisposition': disposition}, 

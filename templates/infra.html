@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-6">
+    <div class="glass max-w-2xl w-full p-8 rounded-2xl">
+        <div class="flex items-center gap-4 mb-8">
+            <div class="p-3 bg-blue-500/20 rounded-xl">
+                <i data-lucide="server" class="w-8 h-8 text-blue-400"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold">Infrastructure Hub</h1>
+                <p class="text-slate-400">Manage your cloud environment via Terraform</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="/infra/init"
+                class="p-6 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 transition-all group">
+                <i data-lucide="package-search" class="w-8 h-8 text-blue-400 mb-4"></i>
+                <h3 class="font-semibold text-lg">Initialize</h3>
+                <p class="text-sm text-slate-400 mt-2">Setup backend and providers</p>
+            </a>
+
+            <a href="/infra/plan"
+                class="p-6 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 transition-all group">
+                <i data-lucide="eye" class="w-8 h-8 text-indigo-400 mb-4"></i>
+                <h3 class="font-semibold text-lg">Plan</h3>
+                <p class="text-sm text-slate-400 mt-2">Preview changes with no impact</p>
+            </a>
+
+            <a href="/infra/apply"
+                class="p-6 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 transition-all group">
+                <i data-lucide="play" class="w-8 h-8 text-emerald-400 mb-4"></i>
+                <h3 class="font-semibold text-lg">Apply</h3>
+                <p class="text-sm text-slate-400 mt-2 border-slate-700">Deploy changes (Auto-approve)</p>
+            </a>
+
+            <a href="/infra/destroy"
+                class="p-6 rounded-xl bg-red-900/10 hover:bg-red-900/20 border border-red-900/30 transition-all group">
+                <i data-lucide="trash-2" class="w-8 h-8 text-red-400 mb-4"></i>
+                <h3 class="font-semibold text-lg text-red-200">Destroy</h3>
+                <p class="text-sm text-red-400/70 mt-2">Decommission all resources</p>
+            </a>
+        </div>
+
+        <div class="mt-8 pt-8 border-t border-slate-700 flex justify-between items-center">
+            <a href="/" class="text-slate-400 hover:text-white flex items-center gap-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Back to Hub
+            </a>
+            <div class="text-xs text-slate-500">
+                Module: Tasks3_4_5/Modules/Deployments
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

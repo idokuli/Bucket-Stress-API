@@ -1,19 +1,36 @@
 import os, secrets, subprocess, sys, multiprocessing, socket
 import requests
-from flask import Flask, render_template
+from flask import Flask, render_template, Response, stream_with_context
 from routes.s3_routes import s3_bp
 from routes.stress_routes import stress_bp
+from tf_runner import stream_terraform
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)
+
+# Configuration
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+cert, key = os.path.join(BASE_DIR, 'cert.pem'), os.path.join(BASE_DIR, 'key.pem')
+
+# Load .env file manually since python-dotenv is not installed
+def load_env():
+    env_path = os.path.join(BASE_DIR, '.env')
+    if os.path.exists(env_path):
+        with open(env_path) as f:
+            for line in f:
+                if line.strip() and not line.startswith('#'):
+                    key, value = line.strip().split('=', 1)
+                    os.environ[key] = value
+
+load_env()
+
+# Get secret key from .env or generate a random one
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
 # Register Blueprints
 app.register_blueprint(s3_bp, url_prefix='/bucket')
 app.register_blueprint(stress_bp, url_prefix='/stress')
 
-# SSL Configuration
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-cert, key = os.path.join(BASE_DIR, 'cert.pem'), os.path.join(BASE_DIR, 'key.pem')
+# SSL Configuration exists at the top now
 
 def get_ip_address():
     """Get the machine's public IP address"""
@@ -30,6 +47,28 @@ def hub():
 @app.route('/health')
 def health():
     return {"status": "healthy"}, 200
+
+@app.route('/infra')
+def infra_hub():
+    return render_template('infra.html')
+
+@app.route('/infra/<action>')
+def trigger_infra(action):
+    if action not in ['init', 'plan', 'apply', 'destroy']:
+        return "Invalid action", 400
+    return render_template('infra_result.html', action=action)
+
+@app.route('/infra/stream/<action>')
+def stream_infra(action):
+    if action not in ['init', 'plan', 'apply', 'destroy']:
+        return "Invalid action", 400
+    
+    def generate():
+        # Using the Deployments module
+        for line in stream_terraform(action, module_path="Tasks3_4_5/Modules/Deployments"):
+            yield line
+            
+    return Response(stream_with_context(generate()), mimetype='text/plain')
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple
