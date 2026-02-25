@@ -17,9 +17,23 @@ def load_env():
     if os.path.exists(env_path):
         with open(env_path) as f:
             for line in f:
-                if line.strip() and not line.startswith('#'):
-                    key, value = line.strip().split('=', 1)
-                    os.environ[key] = value
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key.strip()] = value.strip()
+    
+    # Automate region mapping for Terraform
+    region = os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION')
+    if region:
+        os.environ['TF_VAR_aws_region'] = region
+        # Ensure standard AWS SDKs also see it
+        os.environ.setdefault('AWS_DEFAULT_REGION', region)
+        os.environ.setdefault('AWS_REGION', region)
+        
+    # Automate bucket name mapping for Terraform
+    bucket = os.environ.get('S3_BUCKET_NAME')
+    if bucket:
+        os.environ['TF_VAR_bucket_name'] = bucket
 
 load_env()
 
