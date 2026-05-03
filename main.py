@@ -9,7 +9,27 @@ app = Flask(__name__)
 
 # Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-cert, key = os.path.join(BASE_DIR, 'cert.pem'), os.path.join(BASE_DIR, 'key.pem')
+# Check for environment variables first, fallback to BASE_DIR/cert.pem and BASE_DIR/key.pem
+cert = os.environ.get('SSL_CERT_PATH', os.path.join(BASE_DIR, 'cert.pem'))
+key = os.environ.get('SSL_KEY_PATH', os.path.join(BASE_DIR, 'key.pem'))
+
+def ensure_certs():
+    """Ensure SSL certificates exist, generate them if they don't."""
+    if not os.path.exists(cert) or not os.path.exists(key):
+        print(f"--- 🔒 Generating Self-Signed Certificates: {cert} ---")
+        try:
+            subprocess.run([
+                "openssl", "req", "-x509", "-newkey", "rsa:4096", "-nodes", 
+                "-out", cert, "-keyout", key, "-days", "365", 
+                "-subj", "/CN=localhost"
+            ], check=True)
+            print("--- ✅ Certificates Generated successfully ---")
+        except subprocess.CalledProcessError as e:
+            print(f"--- ❌ Failed to generate certificates: {e} ---")
+            # If we're in a container and can't write, we might need to handle this
+            pass
+
+ensure_certs()
 
 # Load .env file manually since python-dotenv is not installed
 def load_env():
@@ -86,11 +106,7 @@ def stream_infra(action):
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple
-    # Ensure certs exist
-    if not os.path.exists(cert):
-        subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:4096", "-nodes", 
-                       "-out", cert, "-keyout", key, "-days", "365", 
-                       "-subj", "/CN=localhost"], check=True)
+    # Certs are already handled by ensure_certs() at startup
     
     print("--- 🛰️ HUB ONLINE [HTTPS:443] ---")
     run_simple('0.0.0.0', 443, app, ssl_context=(cert, key))

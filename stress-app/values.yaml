@@ -1,0 +1,39 @@
+replicaCount: 1
+
+# AWS Credentials (used by secret.yaml)
+# Set these or pass via --set at runtime
+AWS_ACCESS_KEY_ID: ""
+AWS_SECRET_ACCESS_KEY: ""
+AWS_REGION: "us-east-1"
+
+container:
+  name: stressapp-container
+  image:
+    repository: idokuli/stressapp
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  port:
+    containerPort: 443
+    protocol: TCP
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+  ssl:
+    enabled: false
+    secretName: "flask-ssl"
+    certPath: "/app/certs/tls.crt"
+    keyPath: "/app/certs/tls.key"
+env:
+  awsCred:
+    secretName: aws-cred
+    secretKey:
+      accessKey: AWS_ACCESS_KEY_ID
+      secretKey: AWS_SECRET_ACCESS_KEY
+      region: AWS_REGION
+service:
+  type: LoadBalancer
+  port: 443

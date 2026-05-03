@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.14.4-slim
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -21,6 +21,8 @@ COPY . /app
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+
+EXPOSE 443
 
 # Default command: Start the Flask app
 CMD ["python", "main.py"]

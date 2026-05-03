@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Values.container.name }}
+          image: "{{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}"
+          imagePullPolicy: "{{ .Values.container.image.pullPolicy }}"
+          ports:
+            - containerPort: {{ .Values.container.port.containerPort }}
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.env.awsCred.secretName }}
+                  key: {{ .Values.env.awsCred.secretKey.accessKey }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.env.awsCred.secretName }}
+                  key: {{ .Values.env.awsCred.secretKey.secretKey }}
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.env.awsCred.secretName }}
+                  key: {{ .Values.env.awsCred.secretKey.region }}
+            {{- if .Values.container.ssl.enabled }}
+            - name: SSL_CERT_PATH
+              value: {{ .Values.container.ssl.certPath }}
+            - name: SSL_KEY_PATH
+              value: {{ .Values.container.ssl.keyPath }}
+            {{- end }}
+          volumeMounts:
+            - name: steering-config
+              mountPath: /app/steering.yaml
+              subPath: steering.yaml
+            {{- if .Values.container.ssl.enabled }}
+            - name: ssl-certs
+              mountPath: /app/certs
+              readOnly: true
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ .Values.container.resources.limits.cpu | quote }}
+              memory: {{ .Values.container.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.container.resources.requests.cpu | quote }}
+              memory: {{ .Values.container.resources.requests.memory | quote }}
+      volumes:
+        - name: steering-config
+          configMap:
+            name: {{ .Release.Name }}-steering-config
+        {{- if .Values.container.ssl.enabled }}
+        - name: ssl-certs
+          secret:
+            secretName: {{ .Values.container.ssl.secretName }}
+        {{- end }}
