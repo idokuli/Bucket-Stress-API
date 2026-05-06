@@ -2,7 +2,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-steering-config
+  labels:
+    {{- include "stress-app.labels" . | nindent 4 }}
 data:
   steering.yaml: |
     machines:
-{{ toYaml .Values.machines | indent 6 }}
+{{ toYaml .Values.machines | nindent 6 }}

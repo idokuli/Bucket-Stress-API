@@ -9,3 +9,5 @@ venv/*
 *.tfstate
 *.tfstate.*
 .env
+aws-values.yaml
+stress-app/aws-values.yaml

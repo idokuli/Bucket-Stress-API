@@ -1,4 +1,4 @@
-# Bucket & Stress API Hub
+# 🛰️ Bucket & Stress API Hub
 
 A unified Flask web application for managing AWS S3 storage, orchestrating Terraform infrastructure, and executing stress tests on remote instances.
 
@@ -6,80 +6,73 @@ A unified Flask web application for managing AWS S3 storage, orchestrating Terra
 
 ### 🛠️ Infrastructure Hub (Terraform)
 - **Real-time Streaming**: Watch Terraform `init`, `plan`, `apply`, and `destroy` output live in your browser.
-- **Automated Lifecycle**: Provision a full VPC, Auto Scaling Group, and Load Balancer with one click.
-- **Dynamic AMI**: Automatically finds the latest Amazon Linux 2023 image for `us-east-1`.
+- **Automated Lifecycle**: Provision full stacks with one click.
 - **Automatic Cleanup**: Single-button destruction for decommissioning all resources.
 
 ### 📦 S3 Explorer
-- **Auto-Categorization**: Uploads are automatically sorted into `/images`, `/documents`, or `/others`.
-- **Versioning Control**: Enable/Disable bucket versioning and view file history.
-- **Secure Downloads**: Presigned URL generation with support for UTF-8 (Hebrew) filenames.
-- **Lifecycle Management**: Apply 30-day auto-deletion policies.
-- **Content Search**: Search for specific words within text files directly from S3.
+- **Auto-Categorization**: Sorting into `/images`, `/documents`, or `/others`.
+- **Versioning Control**: Enable/Disable bucket versioning and view history.
+- **Secure Downloads**: Presigned URLs with Hebrew (UTF-8) support.
 
 ### ⚡ Stress Engine
-- Trigger high-load scenarios on your instances to test Auto Scaling policies.
+- Trigger high-load scenarios to test Auto Scaling policies.
 
 ---
 
-## 🛠️ Setup & Installation
+## ⚙️ Configuration Matrix
 
-### Prerequisites
-- **Python 3.9+**
-- **Terraform 1.5+**
-- **AWS CLI** configured with valid credentials.
-- **OpenSSL** (for automatic HTTPS certificate generation).
-
-### 1. Clone & Install Dependencies
-```bash
-git clone <repository-url>
-cd Bucket-Stress-API
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 2. Environment Configuration
-Copy the example environment file and fill in your AWS credentials. Generate a secret key for Flask as well:
-```bash
-cp .env.example .env
-# Generate a secret key and paste it into .env
-python3 -c 'import secrets; print(secrets.token_hex(32))'
-```
-
-### 3. Run the Application
-The application runs over HTTPS (Port 443) by default and will auto-generate developer certificates if missing.
-```bash
-sudo venv/bin/python main.py
-```
-*Note: `sudo` is required to bind to privileged port 443.*
+| Environment | Config File | Key Parameters |
+| :--- | :--- | :--- |
+| **Local Python** | `.env` | AWS Keys, Flask Secret Key |
+| **Docker** | `.env` | Passed via `--env-file` |
+| **Kubernetes (Helm)** | `aws-values.yaml` | AWS Keys (Injected via K8s Secrets) |
 
 ---
 
-## 🐳 Run with Docker
+## 🏗️ Deployment Guide (Kubernetes & Helm)
 
-You can run the entire Hub in a containerized environment (includes Python, Terraform, and all dependencies).
+This is the recommended production-ready deployment method.
 
-### 1. Build the Image
+### 1. Prerequisites
 ```bash
-docker build -t bucket-stress-api .
+minikube start
+minikube addons enable ingress
 ```
 
-### 2. Run the Container
-Pass your environment variables via the `.env` file and map port 443:
-```bash
-docker run -p 443:443 --env-file .env bucket-stress-api
+### 2. Configuration
+Create a file named `stress-app/aws-values.yaml`:
+```yaml
+# stress-app/aws-values.yaml
+AWS_ACCESS_KEY_ID: "YOUR_ACCESS_KEY"
+AWS_SECRET_ACCESS_KEY: "YOUR_SECRET_KEY"
+AWS_REGION: "us-east-1"
 ```
+
+### 3. Deployment
+```bash
+cd stress-app
+helm upgrade --install my-app -f values.yaml -f aws-values.yaml .
+```
+
+### 4. Networking & Access
+1.  **Start Tunnel**: `minikube tunnel` (in a separate terminal).
+2.  **Map Hostname**: Add `127.0.0.1 my-app.local` to your `/etc/hosts`.
+3.  **Visit**: [https://my-app.local](https://my-app.local) (Secure Ingress) or [http://127.0.0.1:5001](http://127.0.0.1:5001) (Standard).
 
 ---
+
+## 🏗️ Architecture: SSL Termination
+The project uses **SSL Termination** at the Ingress level.
+- **The Ingress (Port 443)**: Handles SSL and decrypts traffic.
+- **The Application (Port 5001)**: Runs as plain HTTP inside the cluster for performance.
 
 ## 📂 Project Structure
-- `main.py`: Flask application entry point and routing hub.
-- `tf_runner.py`: Python wrapper for streaming Terraform commands.
-- `s3_service.py`: Core logic for S3 interactions.
-- `Tasks3_4_5/`: Contains Terraform modules for VPC, Load Balancing, and Deployments.
-- `templates/`: Jinja2 HTML templates with Tailwind CSS and Lucide icons.
+- `main.py`: App entry point.
+- `stress-app/`: Full Helm chart.
+- `stress-app/aws-values.yaml`: (Ignored by Git) Stores AWS credentials.
+- `tf_runner.py`: Python wrapper for Terraform.
+- `s3_service.py`: logic for S3 interactions.
 
-## 🛡️ Security Note
-- This application uses self-signed certificates for local development. Your browser will show a warning; you can safely click "Advanced -> Proceed".
-- Never commit your `.env` or `.pem` files to version control.
+## 🛡️ Security
+- **Credentials**: Handled via Kubernetes Secrets.
+- **Exclusion**: `aws-values.yaml` and `.env` are both ignored by Git to prevent leaks.

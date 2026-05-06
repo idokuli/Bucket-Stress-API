@@ -2,15 +2,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}-deployment
+  labels:
+    {{- include "stress-app.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ .Release.Name }}
+      {{- include "stress-app.labels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}
+        {{- include "stress-app.labels" . | nindent 8 }}
     spec:
       containers:
         - name: {{ .Values.container.name }}
@@ -34,6 +36,10 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.env.awsCred.secretName }}
                   key: {{ .Values.env.awsCred.secretKey.region }}
+            - name: ENABLE_SSL
+              value: {{ .Values.env.ENABLE_SSL | quote }}
+            - name: APP_PORT
+              value: {{ .Values.env.APP_PORT | quote }}
             {{- if .Values.container.ssl.enabled }}
             - name: SSL_CERT_PATH
               value: {{ .Values.container.ssl.certPath }}

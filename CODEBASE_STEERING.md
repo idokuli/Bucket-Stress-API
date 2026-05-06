@@ -12,54 +12,41 @@ This project is a hybrid infrastructure management and stress-testing tool. It p
 ## 🏗️ Core Architecture
 
 ### 1. Backend (Python/Flask)
--   **`main.py`**: Entry point. Configures HTTPS (port 443), registers blueprints, and handles environment variable mapping for Terraform.
+-   **`main.py`**: Entry point. Now supports **SSL Termination**. It can run in plain HTTP mode (port 80) if `ENABLE_SSL=false` is set, or HTTPS (port 443) with auto-generated self-signed certificates.
 -   **`s3_service.py`**: A clean wrapper for Boto3 S3 operations.
 -   **`tf_runner.py`**: Orchestrates Terraform sub-processes and streams output back to the UI.
--   **`routes/`**:
-    -   `s3_routes.py`: UI logic for S3 explorer and management.
-    -   `stress_routes.py`: Logic for starting/stopping `stress-ng` processes.
 
 ### 2. Infrastructure (Terraform)
--   **`Tasks3_4_5/Modules/Deployments`**: Contains the core Terraform logic (`main.tf`, `variables.tf`, `output.tf`).
--   The Flask app passes environment variables (like `AWS_REGION`) to Terraform as `TF_VAR_*`.
+-   **`Tasks3_4_5/Modules/Deployments`**: Contains the core Terraform logic.
+-   Environment variables (like `AWS_REGION`) are passed to Terraform as `TF_VAR_*`.
 
 ### 3. Deployment (Docker & Helm)
--   **`dockerfile`**: A multi-tool image that includes Python 3.14-slim, Terraform 1.9.5, and necessary system dependencies.
--   **`stress-app/`**: Helm chart for K8s deployment.
-    -   `values.yaml`: Main configuration.
-    -   `templates/`: K8s manifests (Deployment, ConfigMap, Secret, etc.).
+-   **Docker**: A multi-tool image including Python 3.14, Terraform 1.9.5, and `stress-ng`.
+-   **Helm Chart (`stress-app/`)**: 
+    -   **SSL Termination**: Configured via Ingress (Nginx). The Ingress handles the public HTTPS connection and talks to the pod via HTTP on port 80.
+    -   **Resources**: Configured with high limits (1.0 CPU, 1Gi RAM) to handle concurrent Terraform and Flask operations.
+    -   **Dynamic Labels**: Centralized in `__helpers.tpl` for consistent tracking across all K8s resources.
 
 ---
 
 ## 🛠️ Key Technical Details
 
 ### Security & Networking
--   The app runs on **HTTPS (443)**.
--   It generates self-signed certificates (`cert.pem`, `key.pem`) on startup if they don't exist.
--   S3 credentials are stored in the Flask session (`session['access']`, etc.) after login via the UI.
+-   **Production Path**: Users -> Ingress (HTTPS) -> Service (HTTP:80) -> Pod (HTTP:80).
+-   **Local Path**: Users -> Pod (HTTPS:443).
+-   Self-signed certificates are generated on startup via `ensure_certs()` if they don't exist.
 
 ### Terraform Integration
 -   Terraform is invoked via `subprocess.Popen` in `tf_runner.py`.
--   The output is streamed using Flask's `stream_with_context` to provide real-time updates in the browser.
-
-### Stress Testing
--   Uses `stress-ng` binary (installed in the Docker image).
--   Allows targeting a specific number of CPU cores for a defined duration.
-
----
-
-## 📂 File Map
--   `main.py`: App initialization & Hub route.
--   `s3_service.py`: AWS SDK logic.
--   `tf_runner.py`: Terraform subprocess logic.
--   `routes/`: Blueprint-specific routes.
--   `templates/`: Jinja2 templates for the UI.
--   `stress-app/`: Helm chart source.
--   `Tasks3_4_5/`: Terraform module source.
+-   Output is streamed using Flask's `stream_with_context` for real-time browser updates.
 
 ---
 
 ## 🚀 Common Workflows
-1.  **Local Run**: `python main.py` (Requires `stress-ng` and `terraform` locally).
-2.  **Docker Build**: `docker build . -t idokuli/stressapp`
-3.  **K8s Deploy**: `helm install stress-app ./stress-app`
+1.  **Local Run**: `python main.py` (Defaults to HTTPS:443).
+2.  **K8s Deploy**: `helm upgrade --install stress-api-app ./stress-app`.
+3.  **Sharing**: Use `ngrok http https://localhost:443` or the Ingress External IP.
+
+## Answers to prompts
+1. **To Me**: Explain the old archtecture and then the new one. Explain the changes, why you made them, and how you tested it.
+2. **To End User**: When prompted, guide the end user to writing the changes in the code by referencing the documentation (e.g. `README.md`, `CODEBASE_STEERING.md`), and referencing in the documentation by the line number.

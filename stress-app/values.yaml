@@ -1,7 +1,6 @@
 replicaCount: 1
 
-# AWS Credentials (used by secret.yaml)
-# Set these or pass via --set at runtime
+# AWS Credentials (Defaults - Override in aws-values.yaml)
 AWS_ACCESS_KEY_ID: ""
 AWS_SECRET_ACCESS_KEY: ""
 AWS_REGION: "us-east-1"
@@ -13,7 +12,7 @@ container:
     tag: "latest"
     pullPolicy: IfNotPresent
   port:
-    containerPort: 443
+    containerPort: 5001
     protocol: TCP
   resources:
     limits:
@@ -28,6 +27,8 @@ container:
     certPath: "/app/certs/tls.crt"
     keyPath: "/app/certs/tls.key"
 env:
+  ENABLE_SSL: "false"
+  APP_PORT: "5001"
   awsCred:
     secretName: aws-cred
     secretKey:
@@ -36,4 +37,4 @@ env:
       region: AWS_REGION
 service:
   type: LoadBalancer
-  port: 443
+  port: 5001

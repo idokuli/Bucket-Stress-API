@@ -106,7 +106,14 @@ def stream_infra(action):
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple
-    # Certs are already handled by ensure_certs() at startup
     
-    print("--- 🛰️ HUB ONLINE [HTTPS:443] ---")
-    run_simple('0.0.0.0', 443, app, ssl_context=(cert, key))
+    # Check if SSL is enabled (default to true)
+    enable_ssl = os.environ.get('ENABLE_SSL', 'true').lower() == 'true'
+    port = int(os.environ.get('APP_PORT', 443 if enable_ssl else 5001))
+    
+    if enable_ssl:
+        print(f"--- 🛰️ HUB ONLINE [HTTPS:{port}] ---")
+        run_simple('0.0.0.0', port, app, ssl_context=(cert, key))
+    else:
+        print(f"--- 🛰️ HUB ONLINE [HTTP:{port}] ---")
+        run_simple('0.0.0.0', port, app)
